@@ -181,7 +181,7 @@ function initProcess() {
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: 'high-performance' });
     renderer.setPixelRatio(DPR);
     const scene = new THREE.Scene(), camera = new THREE.Camera();
-    const [t0, t1, t2] = await Promise.all(['sketch', 'clay', 'majlis'].map(n => loadTex(`/assets/img/${n}.webp`, false)));
+    const [t0, t1, t2] = await Promise.all(['sketch', 'clay', 'majlis'].map(n => loadTex(`/ah-preview/assets/img/${n}.webp`, false)));
     const u = {
       uT0: { value: t0 }, uT1: { value: t1 }, uT2: { value: t2 },
       uRes: { value: new THREE.Vector2(1, 1) }, uImg: { value: new THREE.Vector2(t2.image.width, t2.image.height) },
@@ -265,7 +265,7 @@ function initMaterials() {
 
     const aniso = renderer.capabilities.getMaxAnisotropy();
     const T = async (n, rx, ry) => {
-      const t = await loadTex(`/assets/tex/${n}.webp`, true);
+      const t = await loadTex(`/ah-preview/assets/tex/${n}.webp`, true);
       t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry); t.anisotropy = aniso; return t;
     };
     const [trav, wal, mar, bou, ver] = await Promise.all([T('travertine', 2, 1), T('walnut', 2, 1), T('marble', 2, 1), T('boucle', 5, 2.5), T('verde', 2, 1)]);
