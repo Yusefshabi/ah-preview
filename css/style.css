@@ -86,6 +86,12 @@ svg{width:1em;height:1em;flex:none}
 .nav__links{display:flex;gap:4px}
 .nav__links a{padding:9px 14px;border-radius:999px;font-size:14px;color:rgba(255,253,249,.78);transition:color .25s,background .25s}
 .nav__links a:hover{color:#fff;background:rgba(255,255,255,.09)}
+.lang{flex:none;display:inline-flex;align-items:center;height:42px;padding:0 15px;border-radius:999px;border:1px solid rgba(236,220,180,.28);color:var(--cream);font-size:14px;font-weight:500;line-height:1;transition:background .25s,color .25s}
+.lang:hover{background:var(--cream);color:var(--navy)}
+.lang[lang=ar]{font-family:"Segoe UI",Tahoma,Arial,sans-serif;font-size:15px}
+.nav .lang{margin-inline-start:auto}
+.nav .nav__links+.lang{margin-inline-start:0}
+.menu__foot .lang{align-self:flex-start;margin-bottom:10px}
 .nav__burger{display:none;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.08);position:relative}
 .nav__burger span{position:absolute;left:13px;right:13px;height:1.5px;background:var(--cream);transition:transform .45s var(--ease),top .45s var(--ease)}
 .nav__burger span:nth-child(1){top:18px}.nav__burger span:nth-child(2){top:25px}
@@ -330,7 +336,9 @@ svg{width:1em;height:1em;flex:none}
   .nav__links{display:none}
   .nav__burger{display:block}
   .nav{padding-right:8px}
-  .nav__cta{margin-left:auto}
+  .nav__cta{margin-left:0}
+  .nav .nav__links+.lang{margin-inline-start:auto}
+  .nav{gap:8px}
 }
 @media (max-width:899px){
   body{font-size:16px}
@@ -378,6 +386,9 @@ svg{width:1em;height:1em;flex:none}
 }
 @media (max-width:560px){
   .nav__cta span{display:none}
+  .nav .lang{height:40px;padding:0 11px;font-size:13px}
+  .nav{gap:6px;padding-inline-start:14px}
+  .logo{gap:9px}
   .nav__cta{width:42px;padding:0}
   .hero__actions{width:100%}
   .hero__actions .btn{flex:1 1 100%}
