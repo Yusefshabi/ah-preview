@@ -33,7 +33,7 @@
   /* lightbox */
   var lb, lbImg, lbCount, idx = 0;
   function buildLB() {
-    lb = d.createElement('div'); lb.className = 'lb'; lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-label', 'Photo viewer');
+    lb = d.createElement('div'); lb.className = 'lb'; lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-label', d.documentElement.lang === 'ar' ? 'عارض الصور' : 'Photo viewer'); lb.dir = 'ltr';
     lb.innerHTML = '<img alt=""><button class="lb__x" aria-label="Close">✕</button><button class="lb__p" aria-label="Previous photo">←</button><button class="lb__n" aria-label="Next photo">→</button><div class="lb__c"></div>';
     d.body.appendChild(lb);
     lbImg = $('img', lb); lbCount = $('.lb__c', lb);

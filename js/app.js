@@ -6,6 +6,7 @@
   var $$ = function (s, c) { return Array.prototype.slice.call((c || d).querySelectorAll(s)); };
   var clamp = function (v, a, b) { return Math.min(b, Math.max(a, v)); };
   var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var AR = root.lang === 'ar', RTL = root.dir === 'rtl';
   var AH = window.AH = { process: { p: 0, a: 0, b: 0 }, scroll: 0, listeners: [] };
 
   /* ---------- word splitting ---------- */
@@ -84,7 +85,7 @@
   var nav = $('#nav'), burger = $('.nav__burger'), menu = $('#menu');
   function setMenu(open) {
     burger.setAttribute('aria-expanded', open);
-    burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    burger.setAttribute('aria-label', AR ? (open ? 'إغلاق القائمة' : 'فتح القائمة') : (open ? 'Close menu' : 'Open menu'));
     if (open) { menu.hidden = false; d.body.style.overflow = 'hidden'; }
     else { menu.hidden = true; d.body.style.overflow = ''; }
   }
@@ -142,10 +143,12 @@
     var nameEl = form.elements.name;
     if (!name) { nameEl.classList.add('err'); nameEl.focus(); return; }
     nameEl.classList.remove('err');
-    var lines = ['Hello Attractive Home, I\'d like to book a free design consultation.', '', 'Name: ' + name];
-    if ((f.get('phone') || '').trim()) lines.push('Phone: ' + f.get('phone').trim());
-    lines.push('Project: ' + f.get('type'), 'Scope: ' + f.get('scope'));
-    if ((f.get('msg') || '').trim()) lines.push('Details: ' + f.get('msg').trim());
+    var L = AR ? ['مرحباً Attractive Home، أرغب في حجز استشارة تصميم مجانية.', 'الاسم: ', 'الهاتف: ', 'المشروع: ', 'النطاق: ', 'التفاصيل: ']
+               : ['Hello Attractive Home, I\'d like to book a free design consultation.', 'Name: ', 'Phone: ', 'Project: ', 'Scope: ', 'Details: '];
+    var lines = [L[0], '', L[1] + name];
+    if ((f.get('phone') || '').trim()) lines.push(L[2] + f.get('phone').trim());
+    lines.push(L[3] + f.get('type'), L[4] + f.get('scope'));
+    if ((f.get('msg') || '').trim()) lines.push(L[5] + f.get('msg').trim());
     window.open('https://wa.me/971588840028?text=' + encodeURIComponent(lines.join('\n')), '_blank', 'noopener');
   });
 
@@ -157,6 +160,14 @@
     ['Brushed Brass', 'A quiet line of warmth. Handles, inlays, trims and lighting details.'],
     ['Ivory Bouclé', 'Textured, tactile upholstery for sofas, headboards and majlis seating.'],
     ['Verde Marble', 'Deep green stone for the one surface that should stop people mid-sentence.']
+  ];
+  if (AR) MATS = [
+    ['ترافرتين مطفي', 'دافئ ومسامي وهادئ تحت القدم. خيارنا الأول للأرضيات وطاولات القهوة والجدران المميزة.'],
+    ['قشرة الجوز', 'متناظرة العروق ومعالجة في ورشتنا. للخزائن والأبواب وألواح الجدران بكامل الارتفاع.'],
+    ['رخام كالاكاتا', 'حجر مضيء بعروق ناعمة لجزر المطابخ وأحواض المغاسل والحمامات المميزة.'],
+    ['نحاس مطفي', 'خط هادئ من الدفء. للمقابض والتطعيمات والحواف وتفاصيل الإضاءة.'],
+    ['بوكليه عاجي', 'قماش ذو ملمس غني للكنب وظهور الأسرّة وجلسات المجالس.'],
+    ['رخام أخضر', 'حجر أخضر عميق للسطح الوحيد الذي يستحق أن يخطف الأنظار.']
   ];
   var mInfo = $('.materials__info'), swatches = $$('.swatch');
   AH.mat = { index: 0, count: MATS.length, on: [] };
@@ -242,10 +253,10 @@
     if (!spaces) { /* inner page */ } else if (pinned) {
       var sr = spaces.getBoundingClientRect();
       sp = clamp(-sr.top / (sr.height - vh), 0, 1);
-      track.style.transform = 'translate3d(' + (-sp * maxX).toFixed(1) + 'px,0,0)';
+      track.style.transform = 'translate3d(' + ((RTL ? 1 : -1) * sp * maxX).toFixed(1) + 'px,0,0)';
     } else {
       var mx = viewport.scrollWidth - viewport.clientWidth;
-      sp = mx > 0 ? viewport.scrollLeft / mx : 0;
+      sp = mx > 0 ? Math.abs(viewport.scrollLeft) / mx : 0;
     }
     if (sProg) sProg.style.setProperty('--p', clamp(.08 + sp * .92, 0, 1).toFixed(3));
     if (!reduce) {

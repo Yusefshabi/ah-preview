@@ -79,7 +79,7 @@ LOGO = '''<svg class="logo__mark" aria-hidden="true"><use href="#ah-mark"/></svg
     <span class="logo__text"><span class="logo__name">Attractive Home</span><span class="logo__tag">Interior Design &amp; Fit-Out</span></span>'''
 LINKS = [('About', '/about/'), ('Services', '/services/'), ('Portfolio', '/portfolio/'), ('Process', '/#process'), ('FAQ', '/#faq'), ('Contact', '/contacts/')]
 
-def nav(active=''):
+def nav(active='', path='/'):
     li = '\n    '.join(f'<a href="{h}"{CUR if h == active else ""}>{t}</a>' for t, h in LINKS)
     return f'''<!-- ============ NAV ============ -->
 <header class="nav" id="nav">
@@ -89,6 +89,7 @@ def nav(active=''):
   <nav class="nav__links" aria-label="Primary">
     {li}
   </nav>
+  <a class="lang" href="/ar{path}" hreflang="ar" lang="ar">العربية</a>
   <a class="btn btn--cream btn--sm nav__cta" href="{WA}" target="_blank" rel="noopener">
     <svg aria-hidden="true"><use href="#i-wa"/></svg><span>Free consultation</span>
   </a>
@@ -100,6 +101,7 @@ def nav(active=''):
     {li}
   </nav>
   <div class="menu__foot">
+    <a class="lang" href="/ar{path}" hreflang="ar" lang="ar">العربية</a>
     <a href="tel:+971588840028">+971 58 884 0028</a>
     <a href="mailto:info@attractivehome.ae">info@attractivehome.ae</a>
   </div>
@@ -211,6 +213,9 @@ def page(path, title, desc, body, active='', crumbs=(), og='/assets/img/og.jpg',
 <title>{e(title)}</title>
 <meta name="description" content="{e(desc)}">
 <link rel="canonical" href="{url}">
+<link rel="alternate" hreflang="en" href="{url}">
+<link rel="alternate" hreflang="ar" href="{SITE}/ar{path}">
+<link rel="alternate" hreflang="x-default" href="{url}">
 <meta name="robots" content="index, follow, max-image-preview:large">
 <meta name="theme-color" content="#0f2434">
 <meta property="og:type" content="website">
@@ -238,7 +243,7 @@ def page(path, title, desc, body, active='', crumbs=(), og='/assets/img/og.jpg',
 <a class="skip" href="#main">Skip to content</a>
 <div class="loader" aria-hidden="true"><svg class="loader__mark"><use href="#ah-mark"/></svg></div>
 
-{nav(active)}
+{nav(active, path)}
 <main id="main">
 {body}
 </main>
@@ -419,7 +424,7 @@ def portfolio(cat=''):
     items = [p for p in PROJECTS if not cat or CATS[p[1]][0] == cat]
     name = next((v[1] for v in CATS.values() if v[0] == cat), '')
     crumbs = (('Home', '/'), ('Portfolio', '/portfolio/')) + (((name, f'/portfolio/{cat}/'),) if cat else ())
-    ttl = f'{name} <em>projects.</em>' if cat else 'Homes, offices and showrooms <em>we have delivered.</em>'
+    ttl = f'Our <em>{name.lower()} projects.</em>' if cat else 'Homes, offices and showrooms <em>we have delivered.</em>'
     lead = CAT_COPY[cat] if cat else 'Over 100 projects across Dubai and the wider Emirates since 2013. Every photo on this page is from a real Attractive Home project.'
     body = hero('Portfolio', ttl, lead, None, '', crumbs) + f'''
 <section class="section section--tight">
@@ -554,17 +559,37 @@ PAGES.append(page('/contacts/', 'Contact Attractive Home | Free Interior Design 
 
 # ------------------------------------------------------------------ keep homepage nav / footer in sync
 h = src
-h = re.sub(r'<!-- ============ NAV ============ -->.*?</div>\n\n<main', nav('/').replace('\\', '\\\\') + '\n<main', h, flags=re.S)
+h = re.sub(r'<!-- ============ NAV ============ -->.*?</div>\n\n<main', nav('/', '/').replace('\\', '\\\\') + '\n<main', h, flags=re.S)
 h = re.sub(r'<!-- ============ FOOTER ============ -->.*?</div>\n\n<script src', (FOOTER.replace('{note}', 'Homepage images are concept visualisations.')).replace('\\', '\\\\') + '\n<script src', h, flags=re.S)
 for a, b in [('href="css/', 'href="/css/'), ('src="js/', 'src="/js/'), ('src="assets/', 'src="/assets/'), ('href="assets/', 'href="/assets/'),
              ('srcset="assets/', 'srcset="/assets/'), (', assets/', ', /assets/'), ('url(assets/', 'url(/assets/'), ('href="site.webmanifest"', 'href="/site.webmanifest"'),
              ('href="https://attractivehome.ae/portfolio"', 'href="/portfolio/"')]:
     h = h.replace(a, b)
+if 'hreflang="ar"' not in h.split('</head>')[0].split('<header')[0]:
+    h = h.replace('<link rel="canonical" href="https://attractivehome.ae/">', '<link rel="canonical" href="https://attractivehome.ae/">\n<link rel="alternate" hreflang="en" href="https://attractivehome.ae/">\n<link rel="alternate" hreflang="ar" href="https://attractivehome.ae/ar/">\n<link rel="alternate" hreflang="x-default" href="https://attractivehome.ae/">', 1)
 open('index.html', 'w', encoding='utf8', newline='\n').write(h)
+
+# ------------------------------------------------------------------ Arabic version (/ar/...)
+import i18n, ar_strings
+tr = i18n.Translator(ar_strings.STRINGS, ar_strings.PATTERNS)
+for path in ['/'] + PAGES:
+    en_file = os.path.join(path.strip('/'), 'index.html') if path != '/' else 'index.html'
+    ar_html = i18n.translate(open(en_file, encoding='utf8').read(), path, tr, SITE, ar_strings.WA)
+    d = os.path.join('ar', path.strip('/'))
+    os.makedirs(d, exist_ok=True)
+    open(os.path.join(d, 'index.html'), 'w', encoding='utf8', newline='\n').write(ar_html)
+if tr.missing:
+    print(len(tr.missing), 'strings have no Arabic translation yet:')
+    for k, w in list(tr.missing.items())[:60]: print('  ', w, '|', k.encode('ascii', 'replace').decode())
 
 # ------------------------------------------------------------------ sitemap
 urls = ['/'] + PAGES
+def _u(u):
+    alt = (f'<xhtml:link rel="alternate" hreflang="en" href="{SITE}{u}"/><xhtml:link rel="alternate" hreflang="ar" href="{SITE}/ar{u}"/>'
+           f'<xhtml:link rel="alternate" hreflang="x-default" href="{SITE}{u}"/>')
+    return (f'  <url><loc>{SITE}{u}</loc><lastmod>2026-11-24</lastmod>{alt}</url>\n'
+            f'  <url><loc>{SITE}/ar{u}</loc><lastmod>2026-11-24</lastmod>{alt}</url>\n')
 open('sitemap.xml', 'w', encoding='utf8', newline='\n').write(
-    '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
-    ''.join(f'  <url><loc>{SITE}{u}</loc><lastmod>2026-11-24</lastmod></url>\n' for u in urls) + '</urlset>\n')
-print(len(PAGES), 'pages written')
+    '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' +
+    ''.join(_u(u) for u in urls) + '</urlset>\n')
+print(len(PAGES), 'English pages +', len(PAGES) + 1, 'Arabic pages written')
