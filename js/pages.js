@@ -1,9 +1,10 @@
-/* Attractive Home — portfolio filter, project gallery and lightbox */
+/* Attractive Home — portfolio filter, project gallery motion and lightbox */
 (function () {
   'use strict';
   var d = document;
   var $ = function (s, c) { return (c || d).querySelector(s); };
   var $$ = function (s, c) { return Array.prototype.slice.call((c || d).querySelectorAll(s)); };
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var relayout = function () { if (window.AH && AH.lenis) setTimeout(function () { AH.lenis.resize(); }, 400); };
 
   /* ---------- portfolio filter (the links still work without JS) ---------- */
@@ -22,13 +23,21 @@
     });
   }
 
-  /* ---------- lightbox ---------- */
-  var lb, lbImg, lbCount, list = [], idx = 0;
+  /* ---------- project gallery ---------- */
+  var gal = $('#gallery');
+  if (!gal) return;
+  var shots = $$('.shot', gal);
+  var list = (gal.dataset.cover ? [gal.dataset.cover] : []).concat(shots.map(function (a) { return a.getAttribute('href'); }));
+  var offset = gal.dataset.cover ? 1 : 0;
+
+  /* lightbox */
+  var lb, lbImg, lbCount, idx = 0;
   function buildLB() {
     lb = d.createElement('div'); lb.className = 'lb'; lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-label', 'Photo viewer');
     lb.innerHTML = '<img alt=""><button class="lb__x" aria-label="Close">✕</button><button class="lb__p" aria-label="Previous photo">←</button><button class="lb__n" aria-label="Next photo">→</button><div class="lb__c"></div>';
     d.body.appendChild(lb);
     lbImg = $('img', lb); lbCount = $('.lb__c', lb);
+    lbImg.addEventListener('load', function () { lbImg.classList.add('on'); });
     $('.lb__x', lb).onclick = close;
     $('.lb__p', lb).onclick = function () { go(-1); };
     $('.lb__n', lb).onclick = function () { go(1); };
@@ -44,7 +53,12 @@
       var dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1); x0 = null;
     });
   }
-  function show() { lbImg.src = list[idx]; lbCount.textContent = (idx + 1) + ' / ' + list.length; }
+  function show() {
+    lbImg.classList.remove('on'); lbImg.src = list[idx];
+    if (lbImg.complete) lbImg.classList.add('on');
+    lbCount.textContent = (idx + 1) + ' / ' + list.length;
+    var nx = new Image(); nx.src = list[(idx + 1) % list.length];   // warm the next photo
+  }
   function open(i) {
     if (!lb) buildLB(); idx = i; show(); lb.classList.add('open');
     d.body.style.overflow = 'hidden'; if (window.AH && AH.lenis) AH.lenis.stop();
@@ -52,60 +66,24 @@
   function close() { lb.classList.remove('open'); d.body.style.overflow = ''; if (window.AH && AH.lenis) AH.lenis.start(); }
   function go(n) { idx = (idx + n + list.length) % list.length; show(); }
 
-  /* ---------- project gallery, read live from the studio's media library ---------- */
-  var gal = $('#gallery');
-  if (!gal) return;
-  var base = gal.dataset.base, title = gal.dataset.title, PAGE = 9; // full-size originals: keep batches small until gallery thumbnails exist
+  shots.forEach(function (a, i) { a.addEventListener('click', function (e) { e.preventDefault(); open(i + offset); }); });
+  $$('[data-open-gallery]').forEach(function (b) { b.addEventListener('click', function () { open(0); }); });
 
-  function render(groups) {
-    gal.innerHTML = ''; list = [];
-    groups.forEach(function (g) {
-      if (!g.items.length) return;
-      if (g.name) {
-        var h = d.createElement('div'); h.className = 'gallery__sec';
-        var h2 = d.createElement('h2'); h2.textContent = g.name;
-        var n = d.createElement('span'); n.textContent = g.items.length + ' photos';
-        h.appendChild(h2); h.appendChild(n); gal.appendChild(h);
+  /* gentle parallax inside each frame */
+  if (!reduce && shots.length) {
+    var imgs = shots.map(function (a) { return $('img', a); }), ticking = false;
+    var update = function () {
+      ticking = false;
+      var vh = innerHeight;
+      for (var i = 0; i < shots.length; i++) {
+        var r = shots[i].getBoundingClientRect();
+        if (r.bottom < -80 || r.top > vh + 80) continue;
+        var c = (r.top + r.height / 2) / vh - .5;            // -0.5 .. 0.5 across the viewport
+        imgs[i].style.setProperty('--py', (-c * r.height * .09).toFixed(1) + 'px');
       }
-      var wrap = d.createElement('div'); wrap.className = 'gallery__grid'; gal.appendChild(wrap);
-      var shown = 0, more = null;
-      function add(count) {
-        g.items.slice(shown, shown + count).forEach(function (src) {
-          list.push(src);
-          var a = d.createElement('a'); a.href = src;
-          var im = new Image(); im.loading = 'lazy'; im.decoding = 'async';
-          im.alt = title + (g.name ? ', ' + g.name.toLowerCase() : '') + ' by Attractive Home'; im.src = src;
-          a.appendChild(im);
-          a.addEventListener('click', function (e) { e.preventDefault(); open(list.indexOf(src)); });
-          wrap.appendChild(a);
-        });
-        shown += count;
-        if (more && shown >= g.items.length) more.remove();
-        relayout();
-      }
-      add(PAGE);
-      if (shown < g.items.length) {
-        more = d.createElement('div'); more.className = 'gallery__more';
-        var b = d.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = 'Show more photos';
-        b.addEventListener('click', function () { add(PAGE); });
-        more.appendChild(b); gal.appendChild(more);
-      }
-    });
+    };
+    addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    addEventListener('resize', update);
+    update();
   }
-
-  fetch(gal.dataset.src).then(function (r) { return r.json(); }).then(function (m) {
-    var media = (m.media || []).filter(function (x) { return x.type === 'image'; }).map(function (x) { return base + x.src; });
-    var key = function (src) { return src.split('/').pop().replace(/\.\w+$/, ''); };
-    var groups = [], used = {};
-    (m.sections || []).forEach(function (s) {
-      var keys = s.keys || [];
-      var items = media.filter(function (src) { return keys.indexOf(key(src)) > -1; });
-      items.forEach(function (src) { used[src] = 1; });
-      groups.push({ name: (s.names && s.names.en) || '', items: items });
-    });
-    var rest = media.filter(function (src) { return !used[src]; });
-    if (groups.length && rest.length) groups.push({ name: 'More from this project', items: rest });
-    else if (!groups.length) groups.push({ name: '', items: media });
-    if (media.length) render(groups);
-  }).catch(function () { /* keep the pre-rendered cover photo */ });
 })();

@@ -173,10 +173,11 @@ def cta(title='Tell us about <em>your space.</em>'):
   </div>
 </section>'''
 
-def hero(eyebrow, title, lead='', img=None, alt='', crumbs=()):
+def hero(eyebrow, title, lead='', img=None, alt='', crumbs=(), extra=''):
     media = ''
     if img:
-        media = f'''<img class="hero__img" src="/assets/img/{img}.webp" width="1200" height="1500" alt="{e(alt)}" fetchpriority="high" decoding="async">
+        isrc = img if img.startswith('/') else f'/assets/img/{img}.webp'
+        media = f'''<img class="hero__img" src="{isrc}" alt="{e(alt)}" fetchpriority="high" decoding="async">
     <canvas class="hero__gl" id="hero-gl" aria-hidden="true"></canvas>
     <div class="hero__shade"></div>'''
     bc = ''
@@ -192,6 +193,7 @@ def hero(eyebrow, title, lead='', img=None, alt='', crumbs=()):
     <p class="eyebrow eyebrow--light" data-reveal>{eyebrow}</p>
     <h1 class="hero__title" data-split>{title}</h1>
     {f'<p class="hero__lead" data-reveal style="--d:.45s">{lead}</p>' if lead else ''}
+    {extra}
   </div>
 </section>'''
 
@@ -441,16 +443,57 @@ PAGES.append(portfolio())
 for c in ('architectural', 'interior', 'fit'): PAGES.append(portfolio(c))
 
 # ------------------------------------------------------------------ PROJECT PAGES
+GALLERY = json.load(open('gallery.json', encoding='utf8')) if os.path.exists('gallery.json') else {}
+
+def layout(n):
+    """Editorial rhythm for n photos: returns one size class per photo."""
+    out, flip = [], False
+    while n > 0:
+        if n >= 5:
+            out += (['s-tall', 's-big'] if flip else ['s-big', 's-tall']) + ['s-third'] * 3; n -= 5; flip = not flip
+        elif n == 4: out += ['s-half'] * 4; n = 0
+        elif n == 3: out += ['s-third'] * 3; n = 0
+        elif n == 2: out += ['s-half'] * 2; n = 0
+        else: out += ['s-full']; n = 0
+    return out
+
+def shot(pid, ph, cls, i, total, title, cname):
+    room = ph.get('room') or ''
+    alt = f"{title}{', ' + room.lower() if room else ''}, {cname.lower()} by Attractive Home"
+    sizes = {'s-big': '(min-width:900px) 62vw, 92vw', 's-full': '92vw', 's-half': '(min-width:900px) 46vw, 92vw'}.get(cls, '(min-width:900px) 31vw, 46vw')
+    cap = f'<span class="shot__room">{e(room)}</span>' if room else ''
+    return (f'<a class="shot {cls}" href="/assets/g/{pid}/{ph["n"]}.webp" data-reveal style="--d:{(i % 3) * .09:.2f}s">'
+            f'<img src="/assets/g/{pid}/{ph["n"]}-s.webp" srcset="/assets/g/{pid}/{ph["n"]}-s.webp 640w, /assets/g/{pid}/{ph["n"]}.webp 1600w" sizes="{sizes}" '
+            f'width="{ph["w"]}" height="{ph["h"]}" loading="lazy" decoding="async" alt="{e(alt)}">'
+            f'<span class="shot__cap">{cap}<span class="shot__no">{i + 1:02d} / {total:02d}</span></span></a>')
+
 for i, p in enumerate(PROJECTS):
     cat, cname = CATS[p[1]]
     prev, nxt = PROJECTS[i - 1], PROJECTS[(i + 1) % len(PROJECTS)]
     crumbs = (('Home', '/'), ('Portfolio', '/portfolio/'), (cname, f'/portfolio/{cat}/'), (p[2], ppath(p)))
-    body = hero(cname, e(p[2]), '', None, '', crumbs) + f'''
+    photos = GALLERY.get(p[0], [])
+    rooms = []
+    for ph in photos:
+        if ph.get('room') and ph['room'] not in rooms: rooms.append(ph['room'])
+    if photos:
+        cover = f'/assets/g/{p[0]}/1.webp'
+        facts = f'<ul class="facts" data-reveal style="--d:.5s"><li><small>Scope</small>{cname}</li>' + \
+                (f'<li><small>Spaces</small>{e(", ".join(rooms[:4]))}</li>' if rooms else '') + \
+                f'<li><small>Gallery</small><button type="button" class="facts__btn" data-open-gallery>{len(photos)} photos <svg aria-hidden="true"><use href="#i-arrow"/></svg></button></li></ul>'
+        head = hero(cname, e(p[2]), '', cover, f'{p[2]}, {cname.lower()} by Attractive Home', crumbs, facts)
+        rest = photos[1:]
+        cls = layout(len(rest))
+        grid = '\n      '.join(shot(p[0], ph, cls[k], k + 1, len(photos), p[2], cname) for k, ph in enumerate(rest))
+        gal = f'<div class="shots" id="gallery" data-cover="{cover}">\n      {grid}\n    </div>' if rest else f'<div class="shots" id="gallery" data-cover="{cover}"></div>'
+        og, pre = SITE + cover, cover
+    else:
+        head = hero(cname, e(p[2]), '', None, '', crumbs)
+        gal = f'<div class="shots" id="gallery"><a class="shot s-full" href="{pimg(p)}">{pthumb(p, ALT_A, True)}</a></div>'
+        og, pre = pimg(p), None
+    body = head + f'''
 <section class="section section--tight">
   <div class="wrap">
-    <div class="gallery" id="gallery" data-src="{S3}projects/{cat}/project-{p[0]}/metadata.json" data-base="{S3}" data-title="{e(p[2])}">
-      <div class="gallery__grid"><a href="{pimg(p)}">{pthumb(p, ALT_A, True)}</a></div>
-    </div>
+    {gal}
     <nav class="pnav" aria-label="More projects">
       <a href="{ppath(prev)}"><small>Previous project</small><span>{e(prev[2])}</span></a>
       <a href="/portfolio/" class="pnav__all">All projects</a>
@@ -459,11 +502,11 @@ for i, p in enumerate(PROJECTS):
   </div>
 </section>
 ''' + cta('Want something <em>like this?</em>')
-    ld = {"@context": "https://schema.org", "@type": "CreativeWork", "name": p[2], "genre": cname, "image": pimg(p), "url": SITE + ppath(p),
-          "creator": {"@id": SITE + "/#business"}}
+    ld = {"@context": "https://schema.org", "@type": "CreativeWork", "name": p[2], "genre": cname, "url": SITE + ppath(p),
+          "image": [f"{SITE}/assets/g/{p[0]}/{ph['n']}.webp" for ph in photos] or pimg(p), "creator": {"@id": SITE + "/#business"}}
     PAGES.append(page(ppath(p), f'{p[2]} | {cname} Project by Attractive Home',
-         f'{p[2]}: a {cname.lower()} project by Attractive Home, the Dubai interior design studio and fit-out contractor. View the full photo gallery.',
-         body, '/portfolio/', crumbs, og=pimg(p), note=NOTE_REAL, extra_ld=ld, scripts='<script src="/js/pages.js" defer></script>\n'))
+         f'{p[2]}: a {cname.lower()} project by Attractive Home, the Dubai interior design studio and fit-out contractor. View the project photos.',
+         body, '/portfolio/', crumbs, og=og, note=NOTE_REAL, preload=pre, extra_ld=ld, scripts='<script src="/js/pages.js" defer></script>\n'))
 
 # ------------------------------------------------------------------ CONTACT
 contact = hero('Contact', 'Tell us about <em>your space.</em>',
