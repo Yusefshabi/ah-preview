@@ -60,9 +60,18 @@ PROJECTS = [
 ]
 e = html.escape
 CUR = ' aria-current="page"'
+LOAD_EAGER = 'fetchpriority="high"'
+LOAD_LAZY = 'loading="lazy"'
 ACT = ' class="is-active" aria-current="page"'
 def ppath(p): return f"/portfolio/{CATS[p[1]][0]}/project-{p[0]}/"
 def pimg(p): return f"{S3}projects/{CATS[p[1]][0]}/project-{p[0]}/media/{p[3]}"
+ALT_A = 'by Attractive Home'
+ALT_B = 'project in the UAE by Attractive Home'
+def pthumb(p, tail, eager=False):
+    """Local 4:3 cover thumbnail (generated from the first project photo) with a small/large srcset."""
+    return (f'<img src="/assets/pf/{p[0]}.webp" srcset="/assets/pf/{p[0]}-s.webp 480w, /assets/pf/{p[0]}.webp 960w" '
+            f'sizes="(min-width:900px) 31vw, (min-width:561px) 46vw, 92vw" width="960" height="720" '
+            f'{LOAD_EAGER if eager else LOAD_LAZY} decoding="async" alt="{e(p[2])}, {CATS[p[1]][1].lower()} {tail}">')
 
 src = open('index.html', encoding='utf8').read()
 SPRITE = re.search(r'<!-- SVG sprite -->.*?</svg>\n', src, re.S).group(0)
@@ -298,7 +307,7 @@ about = hero('Who we are', 'A Dubai studio that designs it, <em>then builds it.<
       <p class="head__lead" data-reveal>From architectural and interior design to fit-out. A few recent projects from the portfolio.</p>
     </header>
     <ul class="pgrid pgrid--3">
-      {''.join(f'<li class="pcard" data-reveal><a href="{ppath(p)}"><div class="pcard__img"><img src="{pimg(p)}" loading="lazy" decoding="async" alt="{e(p[2])}, {CATS[p[1]][1].lower()} by Attractive Home"></div><p>{CATS[p[1]][1]}</p><h3>{e(p[2])}</h3></a></li>' for p in (PROJECTS[1], PROJECTS[5], PROJECTS[7]))}
+      {''.join(f'<li class="pcard" data-reveal><a href="{ppath(p)}"><div class="pcard__img">{pthumb(p, ALT_A)}</div><p>{CATS[p[1]][1]}</p><h3>{e(p[2])}</h3></a></li>' for p in (PROJECTS[1], PROJECTS[5], PROJECTS[7]))}
     </ul>
     <a class="link" href="/portfolio/">View the full portfolio <svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
   </div>
@@ -396,8 +405,8 @@ PAGES.append(page('/services/', 'Interior Design & Fit-Out Services in Dubai | A
 # ------------------------------------------------------------------ PORTFOLIO (+ category pages)
 def cards(items):
     return '\n      '.join(
-        f'<li class="pcard" data-cat="{CATS[p[1]][0]}"><a href="{ppath(p)}"><div class="pcard__img"><img src="{pimg(p)}" loading="lazy" decoding="async" alt="{e(p[2])}, {CATS[p[1]][1].lower()} project in the UAE by Attractive Home"></div><p>{CATS[p[1]][1]}</p><h3>{e(p[2])}</h3></a></li>'
-        for p in items)
+        f'<li class="pcard" data-cat="{CATS[p[1]][0]}"><a href="{ppath(p)}"><div class="pcard__img">{pthumb(p, ALT_B, i < 3)}</div><p>{CATS[p[1]][1]}</p><h3>{e(p[2])}</h3></a></li>'
+        for i, p in enumerate(items))
 def filters(active):
     n = {k: sum(1 for p in PROJECTS if CATS[p[1]][0] == k) for k in ('architectural', 'interior', 'fit')}
     opts = [('', 'All projects', len(PROJECTS), '/portfolio/'), ('architectural', 'Architectural', n['architectural'], '/portfolio/architectural/'),
@@ -440,7 +449,7 @@ for i, p in enumerate(PROJECTS):
 <section class="section section--tight">
   <div class="wrap">
     <div class="gallery" id="gallery" data-src="{S3}projects/{cat}/project-{p[0]}/metadata.json" data-base="{S3}" data-title="{e(p[2])}">
-      <div class="gallery__grid"><a href="{pimg(p)}"><img src="{pimg(p)}" alt="{e(p[2])}, {cname.lower()} by Attractive Home" decoding="async" fetchpriority="high"></a></div>
+      <div class="gallery__grid"><a href="{pimg(p)}">{pthumb(p, ALT_A, True)}</a></div>
     </div>
     <nav class="pnav" aria-label="More projects">
       <a href="{ppath(prev)}"><small>Previous project</small><span>{e(prev[2])}</span></a>

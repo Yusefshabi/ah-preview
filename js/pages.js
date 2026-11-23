@@ -55,7 +55,7 @@
   /* ---------- project gallery, read live from the studio's media library ---------- */
   var gal = $('#gallery');
   if (!gal) return;
-  var base = gal.dataset.base, title = gal.dataset.title, PAGE = 18;
+  var base = gal.dataset.base, title = gal.dataset.title, PAGE = 9; // full-size originals: keep batches small until gallery thumbnails exist
 
   function render(groups) {
     gal.innerHTML = ''; list = [];
