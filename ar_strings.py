@@ -23,6 +23,10 @@ EXTRA = {
     'Mr. Ibrahim El Hashmi\'s Villa': 'فيلا السيد إبراهيم الهاشمي',
     'WhatsApp': 'واتساب', 'English': 'English',
     'Architectural Design Projects': 'مشاريع التصميم المعماري',
+    'Honey onyx': 'أونيكس عسلي', 'Nero Marquina': 'نيرو ماركينا', 'Natural oak': 'بلوط طبيعي',
+    'Cognac leather': 'جلد كونياك', 'Terrazzo': 'تيرازو', 'Bronze mirror': 'مرآة برونزية',
+    'Every project starts with a material board. Turn the palette to explore the stone, timber, metal, leather and fabric we specify most.':
+        'يبدأ كل مشروع بلوحة مواد. أدِر اللوحة لتستكشف الحجر والخشب والمعدن والجلد والأقمشة التي نختارها غالباً.',
 }
 STRINGS.update(EXTRA)
 

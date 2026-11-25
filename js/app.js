@@ -159,7 +159,13 @@
     ['Calacatta Marble', 'Bright, softly veined stone for kitchen islands, vanities and statement bathrooms.'],
     ['Brushed Brass', 'A quiet line of warmth. Handles, inlays, trims and lighting details.'],
     ['Ivory Bouclé', 'Textured, tactile upholstery for sofas, headboards and majlis seating.'],
-    ['Verde Marble', 'Deep green stone for the one surface that should stop people mid-sentence.']
+    ['Verde Marble', 'Deep green stone for the one surface that should stop people mid-sentence.'],
+    ['Honey Onyx', 'Translucent stone we light from behind. Feature arches, bar fronts and vanity walls.'],
+    ['Nero Marquina', 'Black marble with crisp white veining for contrast. Thresholds, fireplaces and powder rooms.'],
+    ['Natural Oak', 'Pale, straight-grained and quiet. Flooring, ceilings and fluted wall panelling.'],
+    ['Cognac Leather', 'Ages well and softens with use. Drawer linings, headboards and desk tops.'],
+    ['Terrazzo', 'Marble chips set in a warm base. Hard-wearing floors for kitchens, lobbies and retail.'],
+    ['Bronze Mirror', 'Reflects the room without the glare of plain mirror. Wardrobe doors and niche backs.']
   ];
   if (AR) MATS = [
     ['ترافرتين مطفي', 'دافئ ومسامي وهادئ تحت القدم. خيارنا الأول للأرضيات وطاولات القهوة والجدران المميزة.'],
@@ -167,7 +173,13 @@
     ['رخام كالاكاتا', 'حجر مضيء بعروق ناعمة لجزر المطابخ وأحواض المغاسل والحمامات المميزة.'],
     ['نحاس مطفي', 'خط هادئ من الدفء. للمقابض والتطعيمات والحواف وتفاصيل الإضاءة.'],
     ['بوكليه عاجي', 'قماش ذو ملمس غني للكنب وظهور الأسرّة وجلسات المجالس.'],
-    ['رخام أخضر', 'حجر أخضر عميق للسطح الوحيد الذي يستحق أن يخطف الأنظار.']
+    ['رخام أخضر', 'حجر أخضر عميق للسطح الوحيد الذي يستحق أن يخطف الأنظار.'],
+    ['أونيكس عسلي', 'حجر شبه شفاف نضيئه من الخلف. للأقواس المميزة وواجهات البار وجدران المغاسل.'],
+    ['رخام نيرو ماركينا', 'رخام أسود بعروق بيضاء واضحة لإبراز التباين. للعتبات والمدافئ وحمامات الضيوف.'],
+    ['بلوط طبيعي', 'فاتح اللون مستقيم العروق وهادئ. للأرضيات والأسقف وألواح الجدران المضلّعة.'],
+    ['جلد كونياك', 'يزداد جمالاً ونعومة مع الاستخدام. لتبطين الأدراج وظهور الأسرّة وأسطح المكاتب.'],
+    ['تيرازو', 'قطع رخام في قاعدة دافئة اللون. أرضيات متينة للمطابخ والردهات والمحلات.'],
+    ['مرآة برونزية', 'تعكس المكان دون وهج المرآة العادية. لأبواب الخزائن وخلفيات الكوّات.']
   ];
   var mInfo = $('.materials__info'), swatches = $$('.swatch');
   AH.mat = { index: 0, count: MATS.length, on: [] };
@@ -176,7 +188,7 @@
     if (i === AH.mat.index && !silent) return;
     AH.mat.index = i;
     if (mInfo) {
-      $('.materials__idx', mInfo).textContent = ('0' + (i + 1)).slice(-2) + ' / 0' + MATS.length;
+      $('.materials__idx', mInfo).textContent = ('0' + (i + 1)).slice(-2) + ' / ' + ('0' + MATS.length).slice(-2);
       $('.materials__name', mInfo).textContent = MATS[i][0];
       $('.materials__desc', mInfo).textContent = MATS[i][1];
       mInfo.classList.remove('swap'); void mInfo.offsetWidth; mInfo.classList.add('swap');
