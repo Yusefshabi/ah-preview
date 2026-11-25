@@ -268,7 +268,8 @@ function initMaterials() {
       const t = await loadTex(`/ah-preview/assets/tex/${n}.webp`, true);
       t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry); t.anisotropy = aniso; return t;
     };
-    const [trav, wal, mar, bou, ver] = await Promise.all([T('travertine', 2, 1), T('walnut', 2, 1), T('marble', 2, 1), T('boucle', 5, 2.5), T('verde', 2, 1)]);
+    const [trav, wal, mar, bou, ver, ony, nero, oak, lea, ter] = await Promise.all([T('travertine', 2, 1), T('walnut', 2, 1), T('marble', 2, 1), T('boucle', 5, 2.5), T('verde', 2, 1),
+      T('onyx', 2, 1), T('nero', 2, 1), T('oak', 2, 1), T('leather', 4, 2), T('terrazzo', 3, 1.5)]);
 
     // brushed brass micro-texture
     const bc = document.createElement('canvas'); bc.width = 512; bc.height = 256;
@@ -286,7 +287,13 @@ function initMaterials() {
       P({ map: mar, roughness: .12, clearcoat: 1, clearcoatRoughness: .05 }),
       P({ color: 0xcaa25c, metalness: 1, roughness: .34, roughnessMap: brushed, bumpMap: brushed, bumpScale: .25 }),
       P({ map: bou, bumpMap: bou, bumpScale: 4, roughness: 1, sheen: 1, sheenRoughness: .6, sheenColor: new THREE.Color(0xfff3dd) }),
-      P({ map: ver, roughness: .1, clearcoat: 1, clearcoatRoughness: .04 })
+      P({ map: ver, roughness: .1, clearcoat: 1, clearcoatRoughness: .04 }),
+      P({ map: ony, roughness: .08, clearcoat: 1, clearcoatRoughness: .03, emissive: new THREE.Color(0xffb866), emissiveMap: ony, emissiveIntensity: .22 }),
+      P({ map: nero, roughness: .1, clearcoat: 1, clearcoatRoughness: .04 }),
+      P({ map: oak, bumpMap: oak, bumpScale: .5, roughness: .62 }),
+      P({ map: lea, bumpMap: lea, bumpScale: 2.2, roughness: .55, sheen: .5, sheenRoughness: .5, sheenColor: new THREE.Color(0xffd9b0) }),
+      P({ map: ter, roughness: .2, clearcoat: .8, clearcoatRoughness: .1 }),
+      P({ color: 0x9a6a45, metalness: 1, roughness: .06 })
     ];
     const geo = new THREE.SphereGeometry(1, 128, 80);
     // soft contact shadow
@@ -296,7 +303,9 @@ function initMaterials() {
     const shadowMat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sc), transparent: true, depthWrite: false, fog: true });
     const shadowGeo = new THREE.PlaneGeometry(3.2, 3.2);
 
-    const N = mats.length, R = 3.1, STEP = Math.PI * 2 / N;
+    const N = mats.length, STEP = Math.PI * 2 / N;
+    const R = Math.max(3.1, 2.75 / Math.sin(STEP));           // keep neighbours a fixed distance apart however many there are
+    const FALL = 2.2 * N / 6, SHOW = Math.cos(Math.min(Math.PI * .58, STEP * 2.4));
     const items = mats.map((m, i) => {
       const grp = new THREE.Group();
       const s = new THREE.Mesh(geo, m); s.rotation.set(.25, i * 1.3, .12); grp.add(s);
@@ -334,10 +343,10 @@ function initMaterials() {
       rot = lerp(rot, rotT, reduce ? 1 : .085);
       for (let i = 0; i < N; i++) {
         const a = (i - rot) * STEP, it = items[i];
-        const front = Math.pow((Math.cos(a) + 1) / 2, 2.2);
+        const front = Math.pow((Math.cos(a) + 1) / 2, FALL);
         it.grp.position.set(Math.sin(a) * R, Math.sin(t * .7 + i * 1.7) * .05 - (1 - intro) * 1.2, Math.cos(a) * R - R);
         const sc = lerp(.6, 1, front) * lerp(.7, 1, intro); it.grp.scale.setScalar(sc);
-        it.grp.visible = Math.cos(a) > -.25;
+        it.grp.visible = Math.cos(a) > SHOW;
         if (!reduce) it.s.rotation.y += .0022 + front * .0016;
       }
       camera.position.x = lerp(camera.position.x, tilt.x * .55, .05);
